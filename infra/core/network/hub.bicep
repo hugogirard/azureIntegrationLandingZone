@@ -228,4 +228,5 @@ output firewallSubnetId string = vnet.properties.subnets[0].id
 output managementFirewallSubnetId string = vnet.properties.subnets[1].id
 output jumpboxSubnetId string = vnet.properties.subnets[2].id
 output runnerSubnetId string = vnet.properties.subnets[3].id
+output bastionSubnetId string = vnet.properties.subnets[4].id
 output vnetId string = vnet.id

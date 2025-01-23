@@ -71,7 +71,7 @@ resource rgHub 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   location: location
 }
 
-// Networking and peerings (Hub and spoke)
+// #region Networking and peerings (Hub and spoke)
 
 module spokeVnet 'core/network/spoke.bicep' = {
   scope: rgSpoke
@@ -117,7 +117,93 @@ module hubVnet 'core/network/hub.bicep' = {
 //   }
 // }
 
-// End Networking
+// #endregion
+
+// #region Hub components (VM, Bastion, Firewall)
+
+module firewall 'core/firewall/firewall.bicep' = {
+  scope: rgHub
+  name: 'firewall'
+  params: {
+    suffix: suffix
+    location: location
+    subnetId: hubVnet.outputs.firewallSubnetId
+    managementSubnetId: hubVnet.outputs.managementFirewallSubnetId
+  }
+}
+
+module route 'core/network/route.table.bicep' = {
+  scope: rgSpoke
+  name: 'route'
+  params: {
+    location: location
+    fwPrivateIP: firewall.outputs.privateIP
+  }
+}
+
+module jumpbox 'core/compute/jumpbox.bicep' = {
+  scope: rgHub
+  name: 'jumpbox'
+  params: {
+    location: location
+    adminPassword: adminPassword
+    adminUsername: adminUsername
+    subnetId: hubVnet.outputs.jumpboxSubnetId
+  }
+}
+
+module aRecordDFSDNS 'core/DNS/storage.record.bicep' = {
+  scope: rgHub
+  name: 'aRecordDFSDNS'
+  params: {
+    name: jumpbox.outputs.jumpboxName
+    dnsName: privateDnsZoneStorage.outputs.privateStorageBlobDnsZoneName
+    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
+  }
+}
+
+module aRecordJumpboxASE 'core/ase/record.dns.bicep' = {
+  scope: rgSpoke
+  name: 'aRecordJumpboxASE'
+  params: {
+    dnsZoneName: ase.outputs.dnsName
+    privateIpRecord: jumpbox.outputs.privateJumpboxIp
+    recordName: jumpbox.outputs.jumpboxName
+  }
+}
+
+module runner 'core/compute/runner.bicep' = {
+  scope: rgHub
+  name: 'runner'
+  params: {
+    location: location
+    adminPassword: adminPassword
+    adminUsername: adminUsername
+    subnetId: hubVnet.outputs.runnerSubnetId
+  }
+}
+
+module aRecordRunnerASE 'core/ase/record.dns.bicep' = {
+  scope: rgSpoke
+  name: 'aRecordRunnerASE'
+  params: {
+    dnsZoneName: ase.outputs.dnsName
+    privateIpRecord: runner.outputs.privateIps
+    recordName: runner.outputs.vmName
+  }
+}
+
+module bastion 'core/bastion/bastion.bicep' = {
+  scope: rgHub
+  name: 'bastion'
+  params: {
+    location: location
+    subnetId: hubVnet.outputs.bastionSubnetId
+    suffix: suffix
+  }
+}
+
+// #endregion
 
 module storage 'core/storage/storage.bicep' = {
   name: 'storage'
@@ -218,78 +304,6 @@ module ase 'core/ase/ase.bicep' = {
     subnetId: spokeVnet.outputs.subnetASEId
     aseName: 'ase-${suffix}'
     vnetId: spokeVnet.outputs.vnetId
-  }
-}
-
-module firewall 'core/firewall/firewall.bicep' = {
-  scope: rgHub
-  name: 'firewall'
-  params: {
-    suffix: suffix
-    location: location
-    subnetId: hubVnet.outputs.firewallSubnetId
-    managementSubnetId: hubVnet.outputs.managementFirewallSubnetId
-  }
-}
-
-module route 'core/network/route.table.bicep' = {
-  scope: rgSpoke
-  name: 'route'
-  params: {
-    location: location
-    fwPrivateIP: firewall.outputs.privateIP
-  }
-}
-
-module jumpbox 'core/compute/jumpbox.bicep' = {
-  scope: rgHub
-  name: 'jumpbox'
-  params: {
-    location: location
-    adminPassword: adminPassword
-    adminUsername: adminUsername
-    subnetId: hubVnet.outputs.jumpboxSubnetId
-  }
-}
-
-module aRecordDFSDNS 'core/DNS/storage.record.bicep' = {
-  scope: rgHub
-  name: 'aRecordDFSDNS'
-  params: {
-    name: jumpbox.outputs.jumpboxName
-    dnsName: privateDnsZoneStorage.outputs.privateStorageBlobDnsZoneName
-    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
-  }
-}
-
-module aRecordJumpboxASE 'core/ase/record.dns.bicep' = {
-  scope: rgSpoke
-  name: 'aRecordJumpboxASE'
-  params: {
-    dnsZoneName: ase.outputs.dnsName
-    privateIpRecord: jumpbox.outputs.privateJumpboxIp
-    recordName: jumpbox.outputs.jumpboxName
-  }
-}
-
-module runner 'core/compute/runner.bicep' = {
-  scope: rgHub
-  name: 'runner'
-  params: {
-    location: location
-    adminPassword: adminPassword
-    adminUsername: adminUsername
-    subnetId: hubVnet.outputs.runnerSubnetId
-  }
-}
-
-module aRecordRunnerASE 'core/ase/record.dns.bicep' = {
-  scope: rgSpoke
-  name: 'aRecordRunnerASE'
-  params: {
-    dnsZoneName: ase.outputs.dnsName
-    privateIpRecord: runner.outputs.privateIps
-    recordName: runner.outputs.vmName
   }
 }
 
