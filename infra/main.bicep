@@ -71,6 +71,8 @@ resource rgHub 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   location: location
 }
 
+// Networking and peerings (Hub and spoke)
+
 module spokeVnet 'core/network/spoke.bicep' = {
   scope: rgSpoke
   name: 'spokeVnet'
@@ -97,12 +99,11 @@ module hubVnet 'core/network/hub.bicep' = {
   }
 }
 
-// Peerings
 module hubToSpokePeering 'core/network/peering.bicep' = {
   scope: rgHub
   name: 'hubToSpokePeering'
   params: {
-    peeringName: 'hubToSpoke'
+    existingLocalVirtualNetworkName: spokeVnet.name
     remoteVnetId: spokeVnet.outputs.vnetId
   }
 }
@@ -111,10 +112,12 @@ module spokeToHubPeering 'core/network/peering.bicep' = {
   scope: rgSpoke
   name: 'spokeToHubPeering'
   params: {
-    peeringName: 'spokeToHubPeering'
+    existingLocalVirtualNetworkName: hubVnet.name
     remoteVnetId: hubVnet.outputs.vnetId
   }
 }
+
+// End Networking
 
 module storage 'core/storage/storage.bicep' = {
   name: 'storage'

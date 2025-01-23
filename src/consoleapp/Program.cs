@@ -15,24 +15,24 @@ string filename = $"{Guid.NewGuid()}.txt";
 
 // Console.WriteLine("File uploaded successfully", Color.Green);
 
-// try
-// {
-//     Console.WriteLine("");
-//     Console.WriteLine("Write non authorized folder", Color.Yellow);
-//     filename = $"{Guid.NewGuid()}.txt";
-//     Console.WriteLine("");
-//     Console.WriteLine($"Uploading File: {filename}", Color.Yellow);
+try
+{
+    Console.WriteLine("");
+    Console.WriteLine("Write non authorized folder", Color.Yellow);
+    filename = $"{Guid.NewGuid()}.txt";
+    Console.WriteLine("");
+    Console.WriteLine($"Uploading File: {filename}", Color.Yellow);
 
-//     await fileService.UploadFileAsync("doc", "result", filename);
+    await fileService.UploadFileAsync("doc", "result", filename);
 
-// }
-// catch (Exception ex)
-// {
-//     Console.WriteLine("");
-//     Console.WriteLine("Error happened", Color.OrangeRed);
-//     Console.WriteLine(ex.Message);
+}
+catch (Exception ex)
+{
+    Console.WriteLine("");
+    Console.WriteLine("Error happened", Color.OrangeRed);
+    Console.WriteLine(ex.Message);
 
-// }
+}
 
 // try
 // {
@@ -53,19 +53,19 @@ string filename = $"{Guid.NewGuid()}.txt";
 //     Console.WriteLine(ex.Message);
 // }
 
-try
-{
-    Console.WriteLine("");
-    Console.WriteLine("Read file AI", Color.Azure);
-    string content = await fileService.ReadFileAsync("doc", "result", "ai.txt");
+// try
+// {
+//     Console.WriteLine("");
+//     Console.WriteLine("Read file AI", Color.Azure);
+//     string content = await fileService.ReadFileAsync("doc", "result", "ai.txt");
 
 
-    Console.WriteLine("");
-    Console.WriteLine(content);
-}
-catch (Exception ex)
-{
-    Console.WriteLine("");
-    Console.WriteLine("Error happened", Color.Red);
-    Console.WriteLine(ex.Message);
-}
+//     Console.WriteLine("");
+//     Console.WriteLine(content);
+// }
+// catch (Exception ex)
+// {
+//     Console.WriteLine("");
+//     Console.WriteLine("Error happened", Color.Red);
+//     Console.WriteLine(ex.Message);
+// }
