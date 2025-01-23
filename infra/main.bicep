@@ -99,23 +99,23 @@ module hubVnet 'core/network/hub.bicep' = {
   }
 }
 
-module hubToSpokePeering 'core/network/peering.bicep' = {
-  scope: rgHub
-  name: 'hubToSpokePeering'
-  params: {
-    peeringName: '${hubVnet.name}/hub-to-spoke-db'
-    remoteVnetId: spokeVnet.outputs.vnetId
-  }
-}
+// module hubToSpokePeering 'core/network/peering.bicep' = {
+//   scope: rgHub
+//   name: 'hubToSpokePeering'
+//   params: {
+//     peeringName: '${hubVnet.name}/hub-to-spoke-db'
+//     remoteVnetId: spokeVnet.outputs.vnetId
+//   }
+// }
 
-module spokeToHubPeering 'core/network/peering.bicep' = {
-  scope: rgSpoke
-  name: 'spokeToHubPeering'
-  params: {
-    peeringName: '${spokeVnet.name}/hub-to-spoke-db'
-    remoteVnetId: hubVnet.outputs.vnetId
-  }
-}
+// module spokeToHubPeering 'core/network/peering.bicep' = {
+//   scope: rgSpoke
+//   name: 'spokeToHubPeering'
+//   params: {
+//     peeringName: '${spokeVnet.name}/hub-to-spoke-db'
+//     remoteVnetId: hubVnet.outputs.vnetId
+//   }
+// }
 
 // End Networking
 
