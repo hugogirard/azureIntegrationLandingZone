@@ -103,7 +103,7 @@ module hubToSpokePeering 'core/network/peering.bicep' = {
   scope: rgHub
   name: 'hubToSpokePeering'
   params: {
-    existingLocalVirtualNetworkName: hubVnet.name
+    peeringName: '${hubVnet.name}/hub-to-spoke-db'
     remoteVnetId: spokeVnet.outputs.vnetId
   }
 }
@@ -112,7 +112,7 @@ module spokeToHubPeering 'core/network/peering.bicep' = {
   scope: rgSpoke
   name: 'spokeToHubPeering'
   params: {
-    existingLocalVirtualNetworkName: spokeVnet.name
+    peeringName: '${spokeVnet.name}/hub-to-spoke-db'
     remoteVnetId: hubVnet.outputs.vnetId
   }
 }
