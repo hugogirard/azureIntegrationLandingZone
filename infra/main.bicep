@@ -354,18 +354,6 @@ module storagePrivateEndpoint 'core/DNS/storage.privateEndpoint.bicep' = {
 //   }
 // }
 
-module privateEndpointDatalake 'core/DNS/datalake.private.endpoint.bicep' = {
-  scope: rgSpoke
-  name: 'privateEndpointDatalake'
-  params: {
-    location: location
-    privateStorageBlobDnsZoneId: dnsZoneDatalake.outputs.id
-    storageId: datalake.outputs.datalakeStorageId
-    storageName: datalake.outputs.datalakeName
-    subnetId: spokeVnet.outputs.subnetPEId
-  }
-}
-
 // #end region
 
 // #region App Service Environment
