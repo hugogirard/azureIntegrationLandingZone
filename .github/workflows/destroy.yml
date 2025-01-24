@@ -1,0 +1,38 @@
+name: Destroy Azure Resources
+
+on:
+  workflow_dispatch:    
+    inputs:
+        rg-hub:
+            description: 'Name of the hub resource group'
+            default: 'rg-hub-ase'
+            required: true
+        rg-spoke:
+            description: 'Name of the spoke resource group'
+            default: 'rg-spoke-ase'
+            required: true
+
+jobs:
+  create-azure-resources:
+
+    env:      
+      AZURE_CORE_OUTPUT: 'none'
+
+    runs-on: ubuntu-latest
+
+    steps:
+            
+      - name: Azure Login
+        uses: Azure/login@v2        
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Destroy resource groups
+        run: |
+          az group delete --name ${{ github.event.inputs.rg-hub }} --no-wait --yes
+          az group delete --name ${{ github.event.inputs.rg-spoke }} --no-wait --yes
+
+                        
+
+
+    
