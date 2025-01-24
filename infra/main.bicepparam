@@ -28,4 +28,10 @@ param adminPassword = '__adminPassword__'
 
 param adminUsername = '__adminUsername__'
 
+// Integration stack to includes
+
 param createLogicApp = true
+
+param createAzureServiceBus = true
+
+//param createAPIM = true

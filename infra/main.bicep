@@ -50,6 +50,12 @@ param subnetBastionPrefix string
 @description('Create a logic app and ASP plan related to it')
 param createLogicApp bool
 
+@description('Create Azure Service bus')
+param createAzureServiceBus bool
+
+// @description('Create Azure API Management')
+// param createAPIM bool
+
 var tags = {
   SecurityControl: 'Ignore'
 }
@@ -117,6 +123,32 @@ module hubVnet 'core/network/hub.bicep' = {
 //   }
 // }
 
+module spokeVirtualLink 'core/DNS/storage.virtual.link.bicep' = {
+  scope: rgHub
+  name: 'virtualLinkSpoke'
+  params: {
+    privateStorageBlobDnsZoneName: privateStorageBlobDnsZoneName
+    privateStorageFileDnsZoneName: privateStorageFileDnsZoneName
+    privateStorageQueueDnsZoneName: privateStorageQueueDnsZoneName
+    privateStorageTableDnsZoneName: privateStorageTableDnsZoneName
+    vnetName: spokeVnet.outputs.vnetName
+    vnetRgName: rgSpoke.name
+  }
+}
+
+module hubVirtualLink 'core/DNS/storage.virtual.link.bicep' = {
+  scope: rgHub
+  name: 'virtualLinkhub'
+  params: {
+    privateStorageBlobDnsZoneName: privateStorageBlobDnsZoneName
+    privateStorageFileDnsZoneName: privateStorageFileDnsZoneName
+    privateStorageQueueDnsZoneName: privateStorageQueueDnsZoneName
+    privateStorageTableDnsZoneName: privateStorageTableDnsZoneName
+    vnetName: hubVnet.outputs.vnetName
+    vnetRgName: rgHub.name
+  }
+}
+
 // #endregion
 
 // #region Hub components (VM, Bastion, Firewall)
@@ -157,7 +189,47 @@ module aRecordDFSDNS 'core/DNS/storage.record.bicep' = {
   name: 'aRecordDFSDNS'
   params: {
     name: jumpbox.outputs.jumpboxName
+    dnsName: dnsZoneDatalake.outputs.name
+    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
+  }
+}
+
+module aRecordBlobDNS 'core/DNS/storage.record.bicep' = {
+  scope: rgHub
+  name: 'aRecordBlobDNS'
+  params: {
+    name: jumpbox.outputs.jumpboxName
     dnsName: privateDnsZoneStorage.outputs.privateStorageBlobDnsZoneName
+    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
+  }
+}
+
+module aRecordTableDNS 'core/DNS/storage.record.bicep' = {
+  scope: rgHub
+  name: 'aRecordTableDNS'
+  params: {
+    name: jumpbox.outputs.jumpboxName
+    dnsName: privateDnsZoneStorage.outputs.privateStorageTableDnsZoneName
+    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
+  }
+}
+
+module aRecordQueueDNS 'core/DNS/storage.record.bicep' = {
+  scope: rgHub
+  name: 'aRecordQueueDNS'
+  params: {
+    name: jumpbox.outputs.jumpboxName
+    dnsName: privateDnsZoneStorage.outputs.privateStorageQueueDnsZoneName
+    privateEndpointIP: jumpbox.outputs.privateJumpboxIp
+  }
+}
+
+module aRecordFileDNS 'core/DNS/storage.record.bicep' = {
+  scope: rgHub
+  name: 'aRecordFileDNS'
+  params: {
+    name: jumpbox.outputs.jumpboxName
+    dnsName: privateDnsZoneStorage.outputs.privateStorageFileDnsZoneName
     privateEndpointIP: jumpbox.outputs.privateJumpboxIp
   }
 }
@@ -205,6 +277,8 @@ module bastion 'core/bastion/bastion.bicep' = {
 
 // #endregion
 
+// #region Storage and Private DNS Zones
+
 module storage 'core/storage/storage.bicep' = {
   name: 'storage'
   scope: rgSpoke
@@ -224,7 +298,7 @@ module datalake 'core/storage/datalake.bicep' = {
   }
 }
 
-module dnsZoneDFS 'core/DNS/datalake.privatednszone.bicep' = {
+module dnsZoneDatalake 'core/DNS/private.dns.zone.bicep' = {
   scope: rgHub
   name: 'dnsZoneDFS'
   params: {
@@ -232,14 +306,16 @@ module dnsZoneDFS 'core/DNS/datalake.privatednszone.bicep' = {
   }
 }
 
-module datalakePrivateEndpoint 'core/DNS/datalake.private.endpoint.bicep' = {
+module datalakePrivateEndpoint 'core/DNS/private.endpoint.bicep' = {
   scope: rgSpoke
   name: 'datalakePrivateEndpoint'
   params: {
+    name: '${datalake.outputs.datalakeName}-dfs-private-endpoint'
     location: location
-    privateStorageBlobDnsZoneId: dnsZoneDFS.outputs.dfsZoneId
-    storageId: datalake.outputs.datalakeStorageId
-    storageName: datalake.outputs.datalakeName
+    groupIds: [
+      'dfs'
+    ]
+    serviceId: datalake.outputs.datalakeStorageId
     subnetId: spokeVnet.outputs.subnetPEId
   }
 }
@@ -252,32 +328,6 @@ module privateDnsZoneStorage 'core/DNS/storage.dns.zone.bicep' = {
     privateStorageFileDnsZoneName: privateStorageFileDnsZoneName
     privateStorageQueueDnsZoneName: privateStorageQueueDnsZoneName
     privateStorageTableDnsZoneName: privateStorageTableDnsZoneName
-  }
-}
-
-module storageVirtualLink 'core/DNS/storage.virtual.link.bicep' = {
-  scope: rgHub
-  name: 'virtualLinkSpoke'
-  params: {
-    privateStorageBlobDnsZoneName: privateStorageBlobDnsZoneName
-    privateStorageFileDnsZoneName: privateStorageFileDnsZoneName
-    privateStorageQueueDnsZoneName: privateStorageQueueDnsZoneName
-    privateStorageTableDnsZoneName: privateStorageTableDnsZoneName
-    vnetName: spokeVnet.outputs.vnetName
-    vnetRgName: rgSpoke.name
-  }
-}
-
-module hubVirtualLink 'core/DNS/storage.virtual.link.bicep' = {
-  scope: rgHub
-  name: 'virtualLinkhub'
-  params: {
-    privateStorageBlobDnsZoneName: privateStorageBlobDnsZoneName
-    privateStorageFileDnsZoneName: privateStorageFileDnsZoneName
-    privateStorageQueueDnsZoneName: privateStorageQueueDnsZoneName
-    privateStorageTableDnsZoneName: privateStorageTableDnsZoneName
-    vnetName: hubVnet.outputs.vnetName
-    vnetRgName: rgHub.name
   }
 }
 
@@ -296,6 +346,30 @@ module storagePrivateEndpoint 'core/DNS/storage.privateEndpoint.bicep' = {
   }
 }
 
+// module hubDFSLinkStorage 'core/DNS/datalake.privatednszone.bicep' = {
+//   scope: rgHub
+//   name: 'hubDFSLinkStorage'
+//   params: {
+//     name: dnsZoneDatalake.outputs.dfsZoneName
+//   }
+// }
+
+module privateEndpointDatalake 'core/DNS/datalake.private.endpoint.bicep' = {
+  scope: rgSpoke
+  name: 'privateEndpointDatalake'
+  params: {
+    location: location
+    privateStorageBlobDnsZoneId: dnsZoneDatalake.outputs.id
+    storageId: datalake.outputs.datalakeStorageId
+    storageName: datalake.outputs.datalakeName
+    subnetId: spokeVnet.outputs.subnetPEId
+  }
+}
+
+// #end region
+
+// #region App Service Environment
+
 module ase 'core/ase/ase.bicep' = {
   scope: rgSpoke
   name: 'ase'
@@ -307,25 +381,7 @@ module ase 'core/ase/ase.bicep' = {
   }
 }
 
-module hubDFSLinkStorage 'core/DNS/datalake.privatednszone.bicep' = {
-  scope: rgHub
-  name: 'hubDFSLinkStorage'
-  params: {
-    name: dnsZoneDFS.outputs.dfsZoneName
-  }
-}
-
-module privateEndpointDatalake 'core/DNS/datalake.private.endpoint.bicep' = {
-  scope: rgSpoke
-  name: 'privateEndpointDatalake'
-  params: {
-    location: location
-    privateStorageBlobDnsZoneId: hubDFSLinkStorage.outputs.dfsZoneId
-    storageId: datalake.outputs.datalakeStorageId
-    storageName: datalake.outputs.datalakeName
-    subnetId: spokeVnet.outputs.subnetPEId
-  }
-}
+// #endregion
 
 module logging 'core/monitoring/appinsight.bicep' = {
   scope: rgSpoke
@@ -335,6 +391,8 @@ module logging 'core/monitoring/appinsight.bicep' = {
     location: location
   }
 }
+
+// #region Integrations components
 
 module asp 'core/web/app.service.plan.bicep' = {
   scope: rgSpoke
@@ -355,6 +413,23 @@ module logicApp 'core/web/logicapp.bicep' = if (createLogicApp) {
     appInsightName: logging.outputs.appInsightsName
     aspId: asp.outputs.aspId
     storageAccountName: storage.outputs.storageName
+  }
+}
+
+module serviceBus 'core/servicebus/servicebus.bicep' = if (createAzureServiceBus) {
+  scope: rgSpoke
+  name: 'serviceBus'
+  params: {
+    location: location
+    suffix: suffix
+  }
+}
+
+module dnsServiceBus 'core/DNS/private.dns.zone.bicep' = if (createAzureServiceBus) {
+  scope: rgSpoke
+  name: 'dnsServiceBus'
+  params: {
+    name: 'privatelink.servicebus.windows.net'
   }
 }
 

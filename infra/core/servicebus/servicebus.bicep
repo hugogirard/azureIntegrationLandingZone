@@ -8,5 +8,7 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     name: 'Premium'
     tier: 'Premium'
   }
-  properties: {}
+  properties: {
+    publicNetworkAccess: 'Disabled'
+  }
 }
